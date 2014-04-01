@@ -3,9 +3,9 @@ package cl.smaass.doobiebop;
 import android.content.Context;
 import android.view.View;
 
-public class DoobieView extends View {
+public class DBView extends View {
 
-	public DoobieView(Context context) {
+	public DBView(Context context) {
 		super(context);
 	}
 	

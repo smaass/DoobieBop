@@ -11,43 +11,31 @@ import android.view.View;
 import android.view.View.OnTouchListener;
 import android.view.Window;
 
-public class MainActivity extends Activity {
-	private final int SAMPLERATE = 44100;
-	private List<DoobieChannel> channels;
-	private Thread playerThread;
-	private DoobieView doobieView;
+public class DBMainActivity extends Activity implements DBWaveWriter {
+	private final int SAMPLING_RATE = 44100;
+	private List<DBChannel> channels;
+	private DBPlayerThread playerThread;
+	private DBView doobieView;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
-		doobieView = new DoobieView(this);
+		doobieView = new DBView(this);
 		setContentView(doobieView);
 		initChannels();
-		playerThread = new Thread(new Runnable() {
-			public void run() {
-				AudioTest device = new AudioTest(SAMPLERATE);
-				float samples[] = new float[1024];
-				
-				while(true) {
-					for( int i = 0; i < samples.length; i++ ) {
-						samples[i] = getInstantSample();
-					}
-					device.writeSamples( samples );
-				}        	
-			}
-		});
+		playerThread = new DBPlayerThread(SAMPLING_RATE, this);
 		playerThread.setPriority(Thread.MAX_PRIORITY);
 	}
 	
 	private void initChannels() {
-		channels = new ArrayList<DoobieChannel>();
-		channels.add(new DoobieChannel(440, SAMPLERATE));
+		channels = new ArrayList<DBChannel>();
+		channels.add(new DBChannel(440, SAMPLING_RATE));
 	}
 	
 	public float getInstantSample() {
 		float total = 0;
-		for (DoobieChannel s : channels) {
+		for (DBChannel s : channels) {
 			total += s.getNextValue();
 		}
 		return total;
@@ -58,6 +46,12 @@ public class MainActivity extends Activity {
 		super.onStart();
 		setViewListeners(doobieView);
 		playerThread.start();
+	}
+	
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		playerThread.end();
 	}
 	
 	private void setViewListeners(final View view) {

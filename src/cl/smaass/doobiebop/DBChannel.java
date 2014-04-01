@@ -3,7 +3,7 @@ package cl.smaass.doobiebop;
 import android.util.Log;
 
 
-public class DoobieChannel {
+public class DBChannel {
 	private int sampleRate;
 	private float frequency;
 	private float increment;
@@ -13,10 +13,10 @@ public class DoobieChannel {
 	private float x, y;
 	
 	public interface Wave {
-		public float getValue(DoobieChannel channel);
+		public float getValue(DBChannel channel);
 	}
 	
-	public DoobieChannel(float frequency, int sampleRate) {
+	public DBChannel(float frequency, int sampleRate) {
 		this.sampleRate = sampleRate;
 		this.frequency = frequency;
 		this.increment = (float)(2*Math.PI) * frequency / sampleRate;
@@ -25,7 +25,7 @@ public class DoobieChannel {
 		setWave(new Wave() {
 
 			@Override
-			public float getValue(DoobieChannel channel) {
+			public float getValue(DBChannel channel) {
 				float t = (float) (channel.angle/(2*Math.PI));
 				return (float) (Math.sin(channel.angle)*(1-channel.y) + (t - Math.floor(t))*channel.y);
 			}
