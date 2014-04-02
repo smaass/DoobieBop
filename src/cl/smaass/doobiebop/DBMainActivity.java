@@ -11,7 +11,7 @@ import android.view.View;
 import android.view.View.OnTouchListener;
 import android.view.Window;
 
-public class DBMainActivity extends Activity implements DBWaveWriter {
+public class DBMainActivity extends Activity implements DBWaveWriter, DBWaveController {
 	private final int SAMPLING_RATE = 44100;
 	private List<DBChannel> channels;
 	private DBPlayerThread playerThread;
@@ -24,6 +24,7 @@ public class DBMainActivity extends Activity implements DBWaveWriter {
 		doobieView = new DBView(this);
 		setContentView(doobieView);
 		initChannels();
+		doobieView.setWaveController(this);
 		playerThread = new DBPlayerThread(SAMPLING_RATE, this);
 		playerThread.setPriority(Thread.MAX_PRIORITY);
 	}
@@ -44,7 +45,6 @@ public class DBMainActivity extends Activity implements DBWaveWriter {
 	@Override
 	protected void onStart() {
 		super.onStart();
-		setViewListeners(doobieView);
 		playerThread.start();
 	}
 	
@@ -54,32 +54,13 @@ public class DBMainActivity extends Activity implements DBWaveWriter {
 		playerThread.end();
 	}
 	
-	private void setViewListeners(final View view) {
-		view.setOnTouchListener(new OnTouchListener() {
-
-			@Override
-			public boolean onTouch(View v, MotionEvent e) {
-				int action = e.getAction();
-				if (action == MotionEvent.ACTION_DOWN) {
-					playSound(e.getX()/view.getWidth(), 1-(e.getY()/view.getHeight()));
-				}
-				else if (action == MotionEvent.ACTION_MOVE) {
-					playSound(e.getX()/view.getWidth(), 1-(e.getY()/view.getHeight()));
-				}
-				else if (action == MotionEvent.ACTION_UP) {
-					stopSound();
-				}
-				return true;
-			}
-			
-		});
-	}
-	
-	public void playSound(float x, float y) {
+	@Override
+	public void updateWave(float x, float y) {
 		channels.get(0).play(x, y);
 	}
 	
-	public void stopSound() {
+	@Override
+	public void stopWave() {
 		channels.get(0).stop();
 	}
 	
