@@ -6,14 +6,15 @@ import java.util.List;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.Menu;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.View.OnTouchListener;
 import android.view.Window;
+import cl.smaass.doobiebop.waveform.DBPairWave;
+import cl.smaass.doobiebop.waveform.DBSawtoothWave;
+import cl.smaass.doobiebop.waveform.DBSineWave;
+import cl.smaass.doobiebop.waveform.DBWaveform;
 
 public class DBMainActivity extends Activity implements DBWaveWriter, DBWaveController {
 	private final int SAMPLING_RATE = 44100;
-	private List<DBChannel> channels;
+	private List<DBWaveform> waves;
 	private DBPlayerThread playerThread;
 	private DBView doobieView;
 
@@ -23,21 +24,22 @@ public class DBMainActivity extends Activity implements DBWaveWriter, DBWaveCont
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		doobieView = new DBView(this);
 		setContentView(doobieView);
-		initChannels();
+		initWaves();
 		doobieView.setWaveController(this);
 		playerThread = new DBPlayerThread(SAMPLING_RATE, this);
 		playerThread.setPriority(Thread.MAX_PRIORITY);
 	}
 	
-	private void initChannels() {
-		channels = new ArrayList<DBChannel>();
-		channels.add(new DBChannel(440, SAMPLING_RATE));
+	private void initWaves() {
+		waves = new ArrayList<DBWaveform>();
+		waves.add(new DBPairWave(new DBSineWave(SAMPLING_RATE), new DBSawtoothWave(SAMPLING_RATE)));
 	}
 	
+	@Override
 	public float getInstantSample() {
 		float total = 0;
-		for (DBChannel s : channels) {
-			total += s.getNextValue();
+		for (DBWaveform s : waves) {
+			total += s.getInstantAmplitude();
 		}
 		return total;
 	}
@@ -49,19 +51,22 @@ public class DBMainActivity extends Activity implements DBWaveWriter, DBWaveCont
 	}
 	
 	@Override
-	protected void onDestroy() {
-		super.onDestroy();
+	protected void onPause() {
+		super.onPause();
 		playerThread.end();
 	}
 	
 	@Override
 	public void updateWave(float x, float y) {
-		channels.get(0).play(x, y);
+		int fr = (int) (100 + x*1000);
+		DBWaveform pairWave = waves.get(0);
+		pairWave.setFrequency(fr);
+		pairWave.setControlFactor(1 - y);
 	}
 	
 	@Override
 	public void stopWave() {
-		channels.get(0).stop();
+		waves.get(0).setFrequency(0);
 	}
 	
 	@Override
