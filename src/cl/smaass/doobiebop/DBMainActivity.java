@@ -22,17 +22,26 @@ public class DBMainActivity extends Activity implements DBWaveWriter, DBWaveCont
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
-		doobieView = new DBView(this);
-		setContentView(doobieView);
 		initWaves();
-		doobieView.setWaveController(this);
-		playerThread = new DBPlayerThread(SAMPLING_RATE, this);
-		playerThread.setPriority(Thread.MAX_PRIORITY);
+		initView();
+		initPlayerThread();
 	}
 	
 	private void initWaves() {
 		waves = new ArrayList<DBWaveform>();
 		waves.add(new DBPairWave(new DBSineWave(SAMPLING_RATE), new DBSawtoothWave(SAMPLING_RATE)));
+	}
+	
+	private void initView() {
+		doobieView = new DBView(this);
+		setContentView(doobieView);
+		doobieView.setFrequencyRange(100, 1000);
+		doobieView.setWaveController(this);
+	}
+	
+	private void initPlayerThread() {
+		playerThread = new DBPlayerThread(SAMPLING_RATE, this);
+		playerThread.setPriority(Thread.MAX_PRIORITY);
 	}
 	
 	@Override
@@ -51,16 +60,15 @@ public class DBMainActivity extends Activity implements DBWaveWriter, DBWaveCont
 	}
 	
 	@Override
-	protected void onPause() {
-		super.onPause();
+	protected void onDestroy() {
+		super.onDestroy();
 		playerThread.end();
 	}
 	
 	@Override
-	public void updateWave(float x, float y) {
-		int fr = (int) (100 + x*1000);
+	public void updateWave(int frequency, float y) {
 		DBWaveform pairWave = waves.get(0);
-		pairWave.setFrequency(fr);
+		pairWave.setFrequency(frequency);
 		pairWave.setControlFactor(1 - y);
 	}
 	
