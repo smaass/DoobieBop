@@ -38,7 +38,7 @@ public class DBMainActivity extends Activity implements DBWaveWriter, DBWaveCont
 	private void initView() {
 		doobieView = new DBView(this);
 		setContentView(doobieView);
-		doobieView.setFrequencyRange(100, 1000);
+		doobieView.setFrequencyRange(400, 1600);
 		doobieView.setWaveController(this);
 	}
 	
