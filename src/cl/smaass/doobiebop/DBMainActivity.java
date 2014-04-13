@@ -14,6 +14,7 @@ import cl.smaass.doobiebop.waveform.DBWaveform;
 
 public class DBMainActivity extends Activity implements DBWaveWriter, DBWaveController {
 	private final int SAMPLING_RATE = 44100;
+	private final int MAX_FINGERS = 5;
 	private List<DBWaveform> waves;
 	private DBPlayerThread playerThread;
 	private DBView doobieView;
@@ -29,7 +30,9 @@ public class DBMainActivity extends Activity implements DBWaveWriter, DBWaveCont
 	
 	private void initWaves() {
 		waves = new ArrayList<DBWaveform>();
-		waves.add(new DBPairWave(new DBSineWave(SAMPLING_RATE), new DBSawtoothWave(SAMPLING_RATE)));
+		for (int i = 0; i < MAX_FINGERS; i++) {
+			waves.add(new DBPairWave(new DBSineWave(SAMPLING_RATE), new DBSawtoothWave(SAMPLING_RATE)));
+		}
 	}
 	
 	private void initView() {
@@ -48,7 +51,7 @@ public class DBMainActivity extends Activity implements DBWaveWriter, DBWaveCont
 	public float getInstantSample() {
 		float total = 0;
 		for (DBWaveform s : waves) {
-			total += s.getInstantAmplitude();
+			total += s.getInstantAmplitude() / waves.size();
 		}
 		return total;
 	}
@@ -66,15 +69,17 @@ public class DBMainActivity extends Activity implements DBWaveWriter, DBWaveCont
 	}
 	
 	@Override
-	public void updateWave(int frequency, float y) {
-		DBWaveform pairWave = waves.get(0);
-		pairWave.setFrequency(frequency);
-		pairWave.setControlFactor(1 - y);
+	public void updateWave(int waveIndex, int frequency, float y) {
+		if (waveIndex >= MAX_FINGERS) return;
+		DBWaveform wave = waves.get(waveIndex);
+		wave.setFrequency(frequency);
+		wave.setControlFactor(1 - y);
 	}
 	
 	@Override
-	public void stopWave() {
-		waves.get(0).setFrequency(0);
+	public void stopWave(int waveIndex) {
+		if (waveIndex >= MAX_FINGERS) return;
+		waves.get(waveIndex).setFrequency(0);
 	}
 	
 	@Override

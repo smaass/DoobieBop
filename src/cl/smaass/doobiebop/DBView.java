@@ -34,19 +34,32 @@ public class DBView extends View {
 
 			@Override
 			public boolean onTouch(View v, MotionEvent e) {
-				int action = e.getAction();
-				int freq = getFrequency(e.getX() / getWidth());
-				float normalizedY = 1 - (e.getY() / getHeight());
+				int action = e.getActionMasked();
+				int index = e.getActionIndex();
+				int id = e.getPointerId(index);
+				int freq = getFrequency(e.getX(index) / getWidth());
+				float normalizedY = 1 - (e.getY(index) / getHeight());
 				
 				switch (action) {
 					case MotionEvent.ACTION_DOWN:
-						controller.updateWave(freq, normalizedY);
-						break;
+						controller.updateWave(id, freq, normalizedY);
+						return true;
 					case MotionEvent.ACTION_MOVE:
-						controller.updateWave(freq, normalizedY);
-						break;
+						for (int i=0; i<e.getPointerCount(); i++) {
+							id = e.getPointerId(i);
+							freq = getFrequency(e.getX(i) / getWidth());
+							normalizedY = 1 - (e.getY(i) / getHeight());
+							controller.updateWave(id, freq, normalizedY);
+						}
+						return true;
+					case MotionEvent.ACTION_POINTER_DOWN:
+						controller.updateWave(id, freq, normalizedY);
+						return true;
+					case MotionEvent.ACTION_POINTER_UP:
+						controller.stopWave(id);
+						return true;
 					case MotionEvent.ACTION_UP:
-						controller.stopWave();
+						controller.stopWave(id);
 				}
 				
 				return true;
