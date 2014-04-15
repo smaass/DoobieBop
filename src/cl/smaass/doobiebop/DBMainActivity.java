@@ -10,29 +10,57 @@ import android.view.Window;
 import cl.smaass.doobiebop.waveform.DBPairWave;
 import cl.smaass.doobiebop.waveform.DBSawtoothWave;
 import cl.smaass.doobiebop.waveform.DBSineWave;
-import cl.smaass.doobiebop.waveform.DBWaveform;
 
-public class DBMainActivity extends Activity implements DBWaveWriter, DBWaveController {
+public class DBMainActivity extends Activity implements DBWaveWriter, DBChannelsController {
 	private final int SAMPLING_RATE = 44100;
 	private final int MAX_FINGERS = 5;
-	private List<DBWaveform> waves;
+	private List<DBChannel> channels;
 	private DBPlayerThread playerThread;
 	private DBView doobieView;
+	private int numChannels;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
-		initWaves();
+		initChannels();
 		initView();
 		initPlayerThread();
 	}
 	
-	private void initWaves() {
-		waves = new ArrayList<DBWaveform>();
+	private DBEnvelope getEnvelope() {
+		return new DBEnvelope() {
+
+			@Override
+			public float getADSValue(int millisSinceAttack) {
+				if (millisSinceAttack <= 50)
+					return millisSinceAttack / 50f;
+				if (millisSinceAttack < 200)
+					return 1 - (millisSinceAttack - 50) / 600f;
+				return 0.75f;
+			}
+
+			@Override
+			public float getReleaseValue(int millisSinceRelease) {
+				if (millisSinceRelease < 300)
+					return 0.75f - millisSinceRelease / 400f;
+				return 0;
+			}
+			
+		};
+	}
+	
+	private void initChannels() {
+		channels = new ArrayList<DBChannel>();
 		for (int i = 0; i < MAX_FINGERS; i++) {
-			waves.add(new DBPairWave(new DBSineWave(SAMPLING_RATE), new DBSawtoothWave(SAMPLING_RATE)));
+			DBChannel channel = new DBChannel(new DBPairWave(
+													new DBSineWave(SAMPLING_RATE),
+													new DBSawtoothWave(SAMPLING_RATE)),
+											  getEnvelope(),
+											  SAMPLING_RATE);
+			channels.add(channel);
 		}
+		numChannels = channels.size();
 	}
 	
 	private void initView() {
@@ -50,8 +78,8 @@ public class DBMainActivity extends Activity implements DBWaveWriter, DBWaveCont
 	@Override
 	public float getInstantSample() {
 		float total = 0;
-		for (DBWaveform s : waves) {
-			total += s.getInstantAmplitude() / waves.size();
+		for (DBChannel c : channels) {
+			total += c.getInstantAmplitude() / numChannels;
 		}
 		return total;
 	}
@@ -69,17 +97,21 @@ public class DBMainActivity extends Activity implements DBWaveWriter, DBWaveCont
 	}
 	
 	@Override
-	public void updateWave(int waveIndex, int frequency, float y) {
-		if (waveIndex >= MAX_FINGERS) return;
-		DBWaveform wave = waves.get(waveIndex);
-		wave.setFrequency(frequency);
-		wave.setControlFactor(1 - y);
+	public void attack(int channelIndex, int frequency, float y) {
+		if (channelIndex >= MAX_FINGERS) return;
+		channels.get(channelIndex).attack(frequency, 1 - y);
 	}
 	
 	@Override
-	public void stopWave(int waveIndex) {
-		if (waveIndex >= MAX_FINGERS) return;
-		waves.get(waveIndex).setFrequency(0);
+	public void update(int channelIndex, int frequency, float y) {
+		if (channelIndex >= MAX_FINGERS) return;
+		channels.get(channelIndex).update(frequency, 1 - y);
+	}
+	
+	@Override
+	public void release(int channelIndex) {
+		if (channelIndex >= MAX_FINGERS) return;
+		channels.get(channelIndex).release();
 	}
 	
 	@Override

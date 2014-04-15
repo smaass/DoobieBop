@@ -11,7 +11,7 @@ import android.widget.Toast;
 public class DBView extends RelativeLayout {
 	
 	private Button buttonUp, buttonDown;
-	private DBWaveController controller;
+	private DBChannelsController controller;
 	private int lowFr, highFr, startFr;
 	private double exponentFactor;
 
@@ -49,7 +49,7 @@ public class DBView extends RelativeLayout {
 		Toast.makeText(getContext(), start + " - " + end + " Hz", Toast.LENGTH_SHORT).show();
 	}
 	
-	public void setWaveController(DBWaveController controller) {
+	public void setWaveController(DBChannelsController controller) {
 		this.controller = controller;
 		setViewListeners();
 	}
@@ -79,24 +79,24 @@ public class DBView extends RelativeLayout {
 				
 				switch (action) {
 					case MotionEvent.ACTION_DOWN:
-						controller.updateWave(id, freq, normalizedY);
+						controller.attack(id, freq, normalizedY);
 						return true;
 					case MotionEvent.ACTION_MOVE:
 						for (int i=0; i<e.getPointerCount(); i++) {
 							id = e.getPointerId(i);
 							freq = getFrequency(e.getX(i) / getWidth());
 							normalizedY = 1 - (e.getY(i) / getHeight());
-							controller.updateWave(id, freq, normalizedY);
+							controller.update(id, freq, normalizedY);
 						}
 						return true;
 					case MotionEvent.ACTION_POINTER_DOWN:
-						controller.updateWave(id, freq, normalizedY);
+						controller.attack(id, freq, normalizedY);
 						return true;
 					case MotionEvent.ACTION_POINTER_UP:
-						controller.stopWave(id);
+						controller.release(id);
 						return true;
 					case MotionEvent.ACTION_UP:
-						controller.stopWave(id);
+						controller.release(id);
 				}
 				
 				return true;
